@@ -5,7 +5,7 @@
         
         coalesce(
             max({{field}}), 
-            '0001-01-01'    -- a long, long time ago
+            '1970-01-01'    -- a long, long time ago
         ) as start_ts
         
     from {{ relation }}
