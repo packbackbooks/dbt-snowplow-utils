@@ -29,13 +29,20 @@ with all_events as (
     from {{ ref('snowplow_base_events') }}
 
     {% if is_incremental() %}
-        
-        where date(collector_tstamp) >= 
-            date_sub(
-                {{get_start_ts(this)}},
-                interval {{var('snowplow:page_view_lookback_days')}} day
+        {% set start_ts = get_start_ts(this) %}
+        where
+            -- Filter out invalid collector_tstamp values that would cause overflow
+            date(collector_tstamp) > date('0001-01-01')
+            and date(collector_tstamp) >=
+            -- Use GREATEST to ensure we never subtract from dates that would cause overflow
+            GREATEST(
+                date('1970-01-01'),
+                date_sub(
+                    GREATEST(date({{start_ts}}), date('1970-01-01')),
+                    interval {{var('snowplow:page_view_lookback_days')}} day
+                )
             )
-    
+
     {% endif %}
 
 ),
